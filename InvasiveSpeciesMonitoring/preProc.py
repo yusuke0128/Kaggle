@@ -16,10 +16,9 @@ class PreProc():
 		s = sort.Sort()
 		dataSet = sorted(glob.glob(URL),key=s.numericalSort)
 		RGBSet = [0]*len(dataSet)
-		GSet = [0]*len(dataSet)
-		BSet = [0]*len(dataSet)
 		for i in range(len(dataSet)):
 			dataSet[i] = cv2.imread(dataSet[i])
+			dataSet[i] = cv2.resize(dataSet[i],(230,174))
 			RGBSet[i] = cv2.split(dataSet[i])
 		RGBSet = np.array(RGBSet)
 		print(RGBSet.shape)
@@ -28,5 +27,6 @@ class PreProc():
 	def preLabel(self,URL):
 		labelDf = pd.read_csv(URL)
 		label = labelDf["invasive"].values
+		label = np.array(label)
 		return label
 
