@@ -20,7 +20,7 @@ if gpu_flag >= 0:
 xp = cuda.cupy if gpu_flag >= 0 else np
 
 batchsize = 135
-n_epoch = 200
+n_epoch = 150
 p  = pre.PreProc()
 
 #学習データ読み込み
@@ -35,8 +35,9 @@ model = chainer.FunctionSet(conv1 = L.Convolution2D(3,30,5),
                             conv2 = L.Convolution2D(30,30,11),
                             conv3 = L.Convolution2D(30,20,11),
                             conv4 = L.Convolution2D(20,18,11),
-                            conv5 = L.Convolution2D(18,15,11),
-                            l1 = L.Linear(6525,1000),
+                            conv5 = L.Convolution2D(18,15,5),
+			    conv6 = L.Convolution2D(15,10,11),
+                            l1 = L.Linear(2750,1000),
                             l2 = L.Linear(1000,500),
                             l3 = L.Linear(500,20),
                             l4 = L.Linear(20,2),
@@ -44,7 +45,8 @@ model = chainer.FunctionSet(conv1 = L.Convolution2D(3,30,5),
                             b2 = L.BatchNormalization(20),
                             b3 = L.BatchNormalization(1000),
                             b4 = L.BatchNormalization(500),
-                            b5 = L.BatchNormalization(20))
+                            b5 = L.BatchNormalization(20),
+                            b6 = L.BatchNormalization(2))
 
 if gpu_flag >= 0:
 	cuda.get_device(gpu_flag).use()
@@ -57,10 +59,11 @@ def forward(xData, yData, train=True):
 	h = F.max_pooling_2d(model.b2(F.relu(model.conv3(h))),2)
 	h = model.conv4(h)
 	h = model.conv5(h)
+	h = model.conv6(h)
 	h = F.dropout(model.b3(F.relu(model.l1(h))),train=train)
 	h = F.dropout(model.b4(F.relu(model.l2(h))),train=train)
 	h = F.dropout(model.b5(F.relu(model.l3(h))),train=train)
-	y = model.l4(h)
+	y = model.b6(model.l4(h))
 	if train:
 		return F.softmax_cross_entropy(y,t)
 	else:
@@ -98,5 +101,4 @@ for epoch in range(1,n_epoch+1):
 endTime = time.clock()
 print(endTime - startTime)
 # 学習モデル保存
-model.to_cpu()
 cPickle.dump(model, open("model.pkl", "wb"), -1)
